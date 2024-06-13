@@ -1,6 +1,6 @@
 # go-dmux
 
-`go-dmux` is a Go package that provides an abstraction for distributed mutexes. It allows you to create and manage distributed locks using different backends. Currently, it supports Redis as a backend.
+`go-dmux` is a Go package that provides an abstraction for distributed mutexes. It allows you to create and manage distributed locks using different backends. Currently, it supports Redis, in-memory and MySQL as a backend.
 
 ## Installation
 
