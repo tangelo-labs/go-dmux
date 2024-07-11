@@ -6,7 +6,7 @@ require (
 	github.com/Avalanche-io/counter v0.0.0-20180124180526-1336089e985a
 	github.com/alicebob/miniredis/v2 v2.33.0
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/go-redsync/redsync/v4 v4.13.0
+	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/sanketplus/go-mysql-lock v0.0.7
 	github.com/stretchr/testify v1.9.0
