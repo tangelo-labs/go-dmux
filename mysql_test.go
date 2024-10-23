@@ -11,6 +11,7 @@ import (
 	"github.com/Avalanche-io/counter"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/require"
+	"github.com/tangelo-labs/go-dotenv"
 )
 
 type environment struct {

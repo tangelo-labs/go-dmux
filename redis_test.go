@@ -16,14 +16,19 @@ func TestRedisMuxFactory(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
+	redisDSN := startRedisServer(ctx, t)
+
 	t.Run("GIVEN a redis mutex shared across 100 goroutines", func(t *testing.T) {
-		redisDSN := startRedisServer(ctx, t)
-		factory, err := dmux.NewRedisFactory(dmux.RedisConfig{DSN: redisDSN})
+
+		factory, err := dmux.NewRedisFactory(dmux.RedisConfig{
+			DSN:     redisDSN,
+			Retries: 1,
+		})
 
 		require.NoError(t, err)
 		require.NotNil(t, factory)
 
-		mu, err := factory.NewMutex(ctx, "test")
+		mu, err := factory.NewMutex(ctx, "test1")
 		require.NoError(t, err)
 
 		t.Run("WHEN each goroutine tries to acquire the mutex to increase a counter", func(t *testing.T) {
@@ -58,6 +63,31 @@ func TestRedisMuxFactory(t *testing.T) {
 				wg.Wait()
 
 				require.Equal(t, 100, sharedCounter)
+			})
+		})
+	})
+
+	t.Run("GIVEN a redis mutex factory with expiration", func(t *testing.T) {
+		factory, err := dmux.NewRedisFactory(dmux.RedisConfig{
+			DSN:        redisDSN,
+			Expiration: 10 * time.Millisecond,
+			Retries:    1,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, factory)
+
+		mu, err := factory.NewMutex(ctx, "test2")
+		require.NoError(t, err)
+
+		t.Run("WHEN mux instance is locked", func(t *testing.T) {
+			start := time.Now()
+			require.NoError(t, mu.Lock(ctx))
+
+			t.Run("THEN it is released after expiration without calling unlock", func(t *testing.T) {
+				require.NoError(t, mu.Lock(ctx))
+				require.GreaterOrEqual(t, time.Since(start), 10*time.Millisecond)
+				require.NoError(t, mu.Unlock(ctx))
 			})
 		})
 	})
