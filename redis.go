@@ -2,6 +2,7 @@ package dmux
 
 import (
 	"context"
+	"time"
 
 	goredislib "github.com/go-redis/redis"
 	"github.com/go-redsync/redsync/v4"
@@ -11,14 +12,31 @@ import (
 // RedisConfig configuration needed by Redis factory.
 type RedisConfig struct {
 	DSN string
+	// Lock expiration. Mutex instances from the factory will lock the key with expiration. 0 means no expiration.
+	Expiration time.Duration
+	// Retries to acquire the lock. If set to 0 default is 32.
+	Retries uint
 }
 
 type redisFactory struct {
-	rs *redsync.Redsync
+	rs   *redsync.Redsync
+	conf RedisConfig
 }
 
 func (r *redisFactory) NewMutex(_ context.Context, name string) (Mutex, error) {
-	return &redisDMux{rmu: r.rs.NewMutex(name)}, nil
+	var opts []redsync.Option
+
+	opts = append(opts, redsync.WithExpiry(r.conf.Expiration))
+
+	if r.conf.Retries == 0 {
+		r.conf.Retries = 1
+	}
+
+	opts = append(opts, redsync.WithTries(int(r.conf.Retries)))
+
+	return &redisDMux{
+		rmu: r.rs.NewMutex(name, opts...),
+	}, nil
 }
 
 // NewRedisFactory builds a new distributed mutex factory that uses Redis as
@@ -33,7 +51,10 @@ func NewRedisFactory(cfg RedisConfig) (MutexFactory, error) {
 	pool := goredis.NewPool(client)
 	rs := redsync.New(pool)
 
-	return &redisFactory{rs: rs}, nil
+	return &redisFactory{
+		rs:   rs,
+		conf: cfg,
+	}, nil
 }
 
 type redisDMux struct {
