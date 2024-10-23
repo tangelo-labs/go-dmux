@@ -2,8 +2,6 @@ module github.com/tangelo-labs/go-dmux
 
 go 1.22
 
-toolchain go1.23.0
-
 require (
 	github.com/Avalanche-io/counter v0.0.0-20180124180526-1336089e985a
 	github.com/alicebob/miniredis/v2 v2.33.0
