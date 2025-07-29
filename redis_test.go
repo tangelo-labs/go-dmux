@@ -21,15 +21,11 @@ func TestRedisMuxFactory(t *testing.T) {
 	t.Run("GIVEN a redis mutex shared across 100 goroutines", func(t *testing.T) {
 
 		factory, err := dmux.NewRedisFactory(dmux.RedisConfig{
-			DSN:     redisDSN,
-			Retries: 1,
+			DSN: redisDSN,
 		})
 
 		require.NoError(t, err)
 		require.NotNil(t, factory)
-
-		mu, err := factory.NewMutex(ctx, "test1")
-		require.NoError(t, err)
 
 		t.Run("WHEN each goroutine tries to acquire the mutex to increase a counter", func(t *testing.T) {
 			sharedCounter := 0
@@ -37,6 +33,9 @@ func TestRedisMuxFactory(t *testing.T) {
 			wg := sync.WaitGroup{}
 
 			for i := 0; i < 100; i++ {
+				mu, err := factory.NewMutex(ctx, "test1")
+				require.NoError(t, err)
+
 				wg.Add(1)
 
 				go func() {
@@ -71,7 +70,6 @@ func TestRedisMuxFactory(t *testing.T) {
 		factory, err := dmux.NewRedisFactory(dmux.RedisConfig{
 			DSN:        redisDSN,
 			Expiration: 10 * time.Millisecond,
-			Retries:    1,
 		})
 
 		require.NoError(t, err)

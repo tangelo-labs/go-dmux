@@ -12,7 +12,8 @@ import (
 // RedisConfig configuration needed by Redis factory.
 type RedisConfig struct {
 	DSN string
-	// Lock expiration. Mutex instances from the factory will lock the key with expiration. 0 means no expiration.
+	// Lock expiration. Mutex instances from the factory will lock the key with expiration.
+	// If set to 0, it means the default underlying Redis client default expiration that is 8s.
 	Expiration time.Duration
 	// Retries to acquire the lock. If set to 0 default is 32.
 	Retries uint
@@ -26,13 +27,13 @@ type redisFactory struct {
 func (r *redisFactory) NewMutex(_ context.Context, name string) (Mutex, error) {
 	var opts []redsync.Option
 
-	opts = append(opts, redsync.WithExpiry(r.conf.Expiration))
-
-	if r.conf.Retries == 0 {
-		r.conf.Retries = 1
+	if r.conf.Expiration > 0 {
+		opts = append(opts, redsync.WithExpiry(r.conf.Expiration))
 	}
 
-	opts = append(opts, redsync.WithTries(int(r.conf.Retries)))
+	if r.conf.Retries > 0 {
+		opts = append(opts, redsync.WithTries(int(r.conf.Retries)))
+	}
 
 	return &redisDMux{
 		rmu: r.rs.NewMutex(name, opts...),
